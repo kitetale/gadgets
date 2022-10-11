@@ -32,15 +32,15 @@ bool changing4 = false;
 int board[8] = { 0b00000000,
                  0b00000000,
                  0b00000000,
-                 0b00010000,
+                 0b00011000,
                  0b00000000,
                  0b00000000,
                  0b00000000,
                  0b00000000  };
                  
 // snake (player)                
-int snake[8][2] = {{3,3}}; // tracking snake pixel locations
-int snakeLength = 1; // snake's length
+int snake[8][2] = {{3,3}, {3,4}}; // tracking snake pixel locations
+int snakeLength = 2; // snake's length
 
 // row pins in order
 int rowPins[8] = {pin5, pin4, pin3, pin2, pin12, pin11, pin10, pinA1};
@@ -251,9 +251,15 @@ void moveSnake() {
   }
 
   Serial.print("snake = [");
-  for (int i=0; i<snakeLength; i++) {
-    snake[i][0] = (snake[i][0] + rowMove + 8) % 8;
-    snake[i][1] = (snake[i][1] + colMove + 8) % 8;
+  Serial.print("[");
+  Serial.print((snake[0][0] + rowMove + 8) % 8);
+  Serial.print(",");
+  Serial.print((snake[0][1] + colMove + 8) % 8);
+  Serial.print("], ");
+    
+  for (int i=1; i<snakeLength; i++) {
+    snake[i][0] = snake[i-1][0];
+    snake[i][1] = snake[i-1][1];
 
     Serial.print("[");
     Serial.print(snake[i][0]);
@@ -261,6 +267,8 @@ void moveSnake() {
     Serial.print(snake[i][1]);
     Serial.print("], ");
   }
+  snake[0][0] = (snake[0][0] + rowMove + 8) % 8;
+  snake[0][1] = (snake[0][1] + colMove + 8) % 8;
   Serial.println("]");
 
   updateBoard();
