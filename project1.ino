@@ -26,8 +26,22 @@ bool changing2 = false;
 bool changing3 = false;
 bool changing4 = false;
 
-long interval = 1000;
-long previousMillis = 0;
+// initialize board 
+int board[8] = { 0b00000000,
+                 0b00000000,
+                 0b00000000,
+                 0b00010000,
+                 0b00000000,
+                 0b00000000,
+                 0b00000000,
+                 0b00000000  };
+                 
+// snake (player)                
+int snake[8][2] = {{3,3}}; // tracking snake pixel locations
+int snakeLength = 1; // snake's length
+
+// row pins in order
+int rowPins[8] = {pin5, pin4, pin3, pin2, pin12, pin11, pin10, pinA1};
 
 void setup() {
   Serial.begin(9600);
@@ -63,6 +77,7 @@ void setup() {
   digitalWrite(pin10, HIGH); //G
   digitalWrite(pinA1, HIGH); //J
 }
+
 
 void readButton() {
   buttonValue = analogRead(buttons);
@@ -132,17 +147,13 @@ void readButton() {
     changing2 = false;
     changing3 = false;
     changing4 = false;
+    
+    state = 4;
   }
 
+  moveSnake();
 
-/*
-  if (buttonValue < 800 && buttonValue > 650) {
-    state = 0;
-  }
-  if (buttonValue < 649 && buttonValue >=0) {
-    state = 1;
-  }
-  */
+
 }
 
 void rowOn(int rowPin, int bits) {
@@ -174,6 +185,108 @@ void rowOn(int rowPin, int bits) {
   digitalWrite(pin9, LOW); //8
 }
 
+/* board functions */
+void drawBoard() {
+  for (int i=0; i<8; i++) {
+    rowOn(rowPins[i],board[i]);
+  }
+}
+
+void updateBoard() {
+  // reset board
+  for (int i=0; i<8; i++) {
+    board[i] = 0b00000000;
+  }
+  
+  //update board with snake location
+  int row = 0;
+  int col = 0;
+  int newRow = 0;
+  for (int i=0; i<snakeLength; i++) {
+    row = snake[i][0];
+    col = snake[i][1];
+    board[row] = board[row] | (1<<(7-col));
+  }
+  drawBoard();
+}
+
+void moveSnake() {
+  int rowMove = 0;
+  int colMove = 0;
+  
+  switch (state) {
+    case 0 : // left
+      colMove = -1;
+      break;
+     case 1 : // up
+      rowMove = -1;
+      break;
+     case 2 : // right
+      colMove = 1;
+      break;
+     case 3 : // down
+      rowMove = 1;
+      break;
+     default : // state == 4
+      rowMove = 0;
+      colMove = 0;
+      break;
+  }
+
+  Serial.print("snake = [");
+  for (int i=0; i<snakeLength; i++) {
+    snake[i][0] = snake[i][0] + rowMove;
+    snake[i][1] = snake[i][1] + colMove;
+
+    Serial.print("[");
+    Serial.print(snake[i][0]);
+    Serial.print(",");
+    Serial.print(snake[i][1]);
+    Serial.print("], ");
+  }
+  Serial.println("]");
+
+  updateBoard();
+}
+
+void loop() {
+  unsigned long currentTime = millis();
+  
+  // left : 0 , up : 1, right : 2, down: 3
+  readButton();
+  drawBoard(); // draws on 8x8 led board
+
+  if(currentTime % 100 == 0) moveSnake(); // updates the board based on state every second
+  
+
+  
+  if (state == 0) {
+    //left();
+    readButton();
+  }
+
+  if (state == 1) {
+    //up();
+    readButton();
+  }
+
+  if (state == 2) {
+    //right();
+    readButton();
+  }
+
+  if (state == 3) {
+    //down();
+    readButton();
+  }
+
+  
+}
+
+
+
+
+/* Example drawings */
 void O() {
   // O
   rowOn(pin5, 0x7E);
@@ -244,55 +357,4 @@ void down() {
   rowOn(pin11, 0b01111110);
   rowOn(pin10, 0b00111100);
   rowOn(pinA1, 0b00011000);
-}
-
-void loop() {
-  // alternate every second
-  /*
-  unsigned long currentMillis = millis();
-  
-  if (currentMillis % 2000 < 1000) {
-    O();
-  } else {
-    K();
-  }
-  */
-  
-  //unsigned long currentMillis = millis();
-  
-  readButton();
-/*
-  if (buttonLState == HIGH) { // left button play OK
-    if (currentMillis % 2000 < 1000) {
-      O();
-    } else {
-      K();
-    }
-    digitalWrite(debugPin, LOW);
-  } else {
-    digitalWrite(debugPin, HIGH);
-  }
-*/
-  
-  if (state == 0) {
-    left();
-    readButton();
-  }
-
-  if (state == 1) {
-    up();
-    readButton();
-  }
-
-  if (state == 2) {
-    right();
-    readButton();
-  }
-
-  if (state == 3) {
-    down();
-    readButton();
-  }
-
-  
 }
