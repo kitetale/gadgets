@@ -237,9 +237,8 @@ void moveSnake() {
 
   Serial.print("snake = [");
   for (int i=0; i<snakeLength; i++) {
-    
-    snake[i][0] = (snake[i][0] + rowMove) % 8;
-    snake[i][1] = (snake[i][1] + colMove) % 8;
+    snake[i][0] = (snake[i][0] + rowMove + 8) % 8;
+    snake[i][1] = (snake[i][1] + colMove + 8) % 8;
 
     Serial.print("[");
     Serial.print(snake[i][0]);
