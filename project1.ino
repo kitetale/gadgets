@@ -20,8 +20,11 @@ const int pinA5 = A5;
 const int buttons = A6;
 
 int buttonValue = 0;
-int state = 0;
-bool changing = false;
+int state = 4;
+bool changing1 = false;
+bool changing2 = false;
+bool changing3 = false;
+bool changing4 = false;
 
 long interval = 1000;
 long previousMillis = 0;
@@ -63,25 +66,74 @@ void setup() {
 
 void readButton() {
   buttonValue = analogRead(buttons);
+/*
+  Serial.print("Value =");
+  Serial.println(buttonValue);
+*/
 
-  // unpressed : 1023
-  // pressed : 400 - 430
+  if (buttonValue <=100 && !changing1) {
+    state = 0;
+    changing1 = true;
+    changing2 = false;
+    changing3 = false;
+    changing4 = false;
 
-  if (buttonValue >= 650) {
-    //state = 0;
-    changing = false;
-  }
-
-  if (buttonValue < 649 && buttonValue >=0 && !changing) {
-    changing = true;
-    state = !state;
     Serial.print("Value =");
     Serial.println(buttonValue);
     Serial.print("State =");
     Serial.println(state);
     delay(10);
   }
-  
+
+  if (buttonValue > 100 && buttonValue <= 630  && !changing2) {
+    state = 1;
+    changing1 = false;
+    changing2 = true;
+    changing3 = false;
+    changing4 = false;
+
+    Serial.print("Value =");
+    Serial.println(buttonValue);
+    Serial.print("State =");
+    Serial.println(state);
+    delay(10);
+  }
+
+  if (buttonValue < 900 && buttonValue > 630 && !changing3) {
+    state = 2;
+    changing1 = false;
+    changing2 = false;
+    changing3 = true;
+    changing4 = false;
+
+    Serial.print("Value =");
+    Serial.println(buttonValue);
+    Serial.print("State =");
+    Serial.println(state);
+    delay(10);
+  }
+
+  if (buttonValue >= 900 && buttonValue < 1000 && !changing4) {
+    state = 3;
+    changing1 = false;
+    changing2 = false;
+    changing3 = false;
+    changing4 = true;
+
+    Serial.print("Value =");
+    Serial.println(buttonValue);
+    Serial.print("State =");
+    Serial.println(state);
+    delay(10);
+  }
+
+  if (buttonValue > 1000) {
+    changing1 = false;
+    changing2 = false;
+    changing3 = false;
+    changing4 = false;
+  }
+
 
 /*
   if (buttonValue < 800 && buttonValue > 650) {
@@ -152,6 +204,47 @@ void smiley() {
   rowOn(pin11,0b00111100);
 }
 
+void right() {
+  rowOn(pin5,  0b00001000);
+  rowOn(pin4,  0b00001100);
+  rowOn(pin3,  0b00001110);
+  rowOn(pin2,  0b11111111);
+  rowOn(pin12, 0b11111111);
+  rowOn(pin11, 0b00001110);
+  rowOn(pin10, 0b00001100);
+  rowOn(pinA1, 0b00001000);
+}
+void left() {
+  rowOn(pin5,  0b00010000);
+  rowOn(pin4,  0b00110000);
+  rowOn(pin3,  0b01110000);
+  rowOn(pin2,  0b11111111);
+  rowOn(pin12, 0b11111111);
+  rowOn(pin11, 0b01110000);
+  rowOn(pin10, 0b00110000);
+  rowOn(pinA1, 0b00010000);
+}
+void up() {
+  rowOn(pin5,  0b00011000);
+  rowOn(pin4,  0b00111100);
+  rowOn(pin3,  0b01111110);
+  rowOn(pin2,  0b11111111);
+  rowOn(pin12, 0b00011000);
+  rowOn(pin11, 0b00011000);
+  rowOn(pin10, 0b00011000);
+  rowOn(pinA1, 0b00011000);
+}
+void down() {
+  rowOn(pin5,  0b00011000);
+  rowOn(pin4,  0b00011000);
+  rowOn(pin3,  0b00011000);
+  rowOn(pin2,  0b00011000);
+  rowOn(pin12, 0b11111111);
+  rowOn(pin11, 0b01111110);
+  rowOn(pin10, 0b00111100);
+  rowOn(pinA1, 0b00011000);
+}
+
 void loop() {
   // alternate every second
   /*
@@ -163,7 +256,8 @@ void loop() {
     K();
   }
   */
-  unsigned long currentMillis = millis();
+  
+  //unsigned long currentMillis = millis();
   
   readButton();
 /*
@@ -179,21 +273,26 @@ void loop() {
   }
 */
   
-  if (state == 0) { // right button play :)
-    smiley();
+  if (state == 0) {
+    left();
     readButton();
   }
 
   if (state == 1) {
-    // alternate O K
-    if (currentMillis % 2000 < 1000) {
-      O();
-    } else {
-      K();
-    }
+    up();
     readButton();
   }
-  
+
+  if (state == 2) {
+    right();
+    readButton();
+  }
+
+  if (state == 3) {
+    down();
+    readButton();
+  }
+
   
   
 
