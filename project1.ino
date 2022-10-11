@@ -71,7 +71,7 @@ void readButton() {
   Serial.println(buttonValue);
 */
 
-  if (buttonValue <=100 && !changing1) {
+  if (buttonValue <=300 && !changing1) {
     state = 0;
     changing1 = true;
     changing2 = false;
@@ -85,7 +85,7 @@ void readButton() {
     delay(10);
   }
 
-  if (buttonValue > 100 && buttonValue <= 630  && !changing2) {
+  if (buttonValue > 300 && buttonValue <= 630  && !changing2) {
     state = 1;
     changing1 = false;
     changing2 = true;
@@ -159,6 +159,7 @@ void rowOn(int rowPin, int bits) {
   if ((bits>>1) & 0b1) digitalWrite(pin8, HIGH); //7
   if (bits & 0b1) digitalWrite(pin9, HIGH); //8
 
+  delay(2);
 
   // turn off all
   digitalWrite(rowPin, HIGH);
@@ -292,9 +293,6 @@ void loop() {
     down();
     readButton();
   }
-
-  
-  
 
   
 }
