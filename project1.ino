@@ -35,12 +35,16 @@ int board[8] = { 0b00000000,
                  0b00011100,
                  0b00000000,
                  0b00000000,
-                 0b00000000,
+                 0b01000000,
                  0b00000000  };
                  
 // snake (player)                
-int snake[8][2] = {{3,3}, {3,4}, {3,5}}; // tracking snake pixel locations
+int snake[16][2] = {{3,3}, {3,4}, {3,5}}; // tracking snake pixel locations
 int snakeLength = 3; // snake's length
+int maxLength = 16;
+
+// food (target)
+int foodLoc[2] = {6,1};
 
 // row pins in order
 int rowPins[8] = {pin5, pin4, pin3, pin2, pin12, pin11, pin10, pinA1};
@@ -201,6 +205,11 @@ void rowOn(int rowPin, int bits) {
   digitalWrite(pin8, LOW); //7
   digitalWrite(pin9, LOW); //8
 }
+/* Food (target) function */
+void generateFood() {
+  foodLoc[0] = random(random(100)) % 8;
+  foodLoc[1] = random(random(100)) % 8;
+}
 
 /* board functions */
 void drawBoard() {
@@ -224,8 +233,14 @@ void updateBoard() {
     col = snake[i][1];
     board[row] = board[row] | (1<<(7-col));
   }
+
+  //update food location on the board
+  board[foodLoc[0]] =board[foodLoc[0]] | (1<<(7-foodLoc[1]));
+
+  // draw updated board
   drawBoard();
 }
+
 
 void moveSnake() {
   int rowMove = 0;
@@ -250,6 +265,9 @@ void moveSnake() {
       break;
   }
 
+  int lastPosR = snake[snakeLength-1][0];
+  int lastPosC = snake[snakeLength-1][1];
+
   Serial.print("snake = [");
   Serial.print("[");
   Serial.print((snake[0][0] + rowMove + 8) % 8);
@@ -271,37 +289,25 @@ void moveSnake() {
   snake[0][1] = (snake[0][1] + colMove + 8) % 8;
   Serial.println("]");
 
+  // check if has got to food location
+  if (snake[0][0] == foodLoc[0] && snake[0][1] == foodLoc[1]) {
+    generateFood(); //set new food location
+    if (snakeLength < maxLength){ // bounding for memory safety
+      snake[snakeLength][0] = lastPosR;
+      snake[snakeLength][1] = lastPosC;
+      snakeLength ++;
+    }
+  }
+
   updateBoard();
 }
 
+
 void loop() {
   currentTime = millis();
-  
   // left : 0 , up : 1, right : 2, down: 3
-  readButton();
+  readButton(); // read button input
   drawBoard(); // draws on 8x8 led board
-  
-
-  
-  if (state == 0) {
-    //left();
-    readButton();
-  }
-
-  if (state == 1) {
-    //up();
-    readButton();
-  }
-
-  if (state == 2) {
-    //right();
-    readButton();
-  }
-
-  if (state == 3) {
-    //down();
-    readButton();
-  }
 }
 
 
