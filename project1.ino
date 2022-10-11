@@ -1,5 +1,10 @@
-const byte debugPin = 13;
+// @kitetale
+// Snake Game 8x8x2 game
+// HCI 05-333 Gadgets project 1 code
+// 10/11/2022
 
+const byte debugPin = 13;
+// pins 
 const int pin2 = 2;
 const int pin3 = 3;
 const int pin4 = 4;
@@ -17,12 +22,13 @@ const int pinA3 = A3;
 const int pinA4 = A4;
 const int pinA5 = A5;
 
+// button related 
 const int buttons = A6;
-
 int buttonValue = 0;
 int state = 4;
 int lastState= 4;
 
+// locks for button press state setting 
 bool changing1 = false;
 bool changing2 = false;
 bool changing3 = false;
@@ -49,9 +55,13 @@ int foodLoc[2] = {6,1};
 // row pins in order
 int rowPins[8] = {pin5, pin4, pin3, pin2, pin12, pin11, pin10, pinA1};
 
+// timer for each snake body to move by
 unsigned long currentTime;
 unsigned long lastTime = 0;
 int tSpeed = 300; //millisecond to move pix by
+
+// game over indicator
+bool gameOver = false;
 
 void setup() {
   Serial.begin(9600);
@@ -88,8 +98,14 @@ void setup() {
   digitalWrite(pinA1, HIGH); //J
 }
 
-
+/* read buttons analog pin and set direction state based on button pressed */
 void readButton() {
+  if (gameOver) {
+    state = 4;
+    lastState = 4;
+    return;
+  }
+  
   buttonValue = analogRead(buttons);
 /*
   Serial.print("Value =");
@@ -108,7 +124,6 @@ void readButton() {
     Serial.println(buttonValue);
     Serial.print("State =");
     Serial.println(state);
-    delay(10);
   }
 
   if (buttonValue > 300 && buttonValue <= 630  && !changing2) {
@@ -123,7 +138,6 @@ void readButton() {
     Serial.println(buttonValue);
     Serial.print("State =");
     Serial.println(state);
-    delay(10);
   }
 
   if (buttonValue < 900 && buttonValue > 630 && !changing3) {
@@ -138,7 +152,6 @@ void readButton() {
     Serial.println(buttonValue);
     Serial.print("State =");
     Serial.println(state);
-    delay(10);
   }
 
   if (buttonValue >= 900 && buttonValue < 1000 && !changing4) {
@@ -153,7 +166,6 @@ void readButton() {
     Serial.println(buttonValue);
     Serial.print("State =");
     Serial.println(state);
-    delay(10);
   }
 
   if (buttonValue > 1000) {
@@ -169,14 +181,11 @@ void readButton() {
         lastTime = currentTime;
       }
     }
-    
     state = 4;
   }
-
-
-
 }
 
+/* set [rowPin] row's column in [bits] pattern */
 void rowOn(int rowPin, int bits) {
   // turn on row pin 
   digitalWrite(rowPin, LOW);
@@ -191,7 +200,7 @@ void rowOn(int rowPin, int bits) {
   if ((bits>>1) & 0b1) digitalWrite(pin8, HIGH); //7
   if (bits & 0b1) digitalWrite(pin9, HIGH); //8
 
-  delay(2);
+  delay(1);
 
   // turn off all
   digitalWrite(rowPin, HIGH);
@@ -205,20 +214,28 @@ void rowOn(int rowPin, int bits) {
   digitalWrite(pin8, LOW); //7
   digitalWrite(pin9, LOW); //8
 }
+
 /* Food (target) function */
+// generate new location for food
 void generateFood() {
-  foodLoc[0] = random(random(100)) % 8;
-  foodLoc[1] = random(random(100)) % 8;
+  foodLoc[0] = random(random(88) + random(28)) % 8;
+  foodLoc[1] = random(random(78) + random(42)) % 8;
 }
 
 /* board functions */
+// print board
 void drawBoard() {
   for (int i=0; i<8; i++) {
     rowOn(rowPins[i],board[i]);
   }
 }
 
+// update board array
 void updateBoard() {
+  if (gameOver) {
+    gg();
+    return;
+  }
   // reset board
   for (int i=0; i<8; i++) {
     board[i] = 0b00000000;
@@ -235,13 +252,14 @@ void updateBoard() {
   }
 
   //update food location on the board
-  board[foodLoc[0]] =board[foodLoc[0]] | (1<<(7-foodLoc[1]));
+  board[foodLoc[0]] = board[foodLoc[0]] | (1<<(7-foodLoc[1]));
 
   // draw updated board
   drawBoard();
 }
 
-
+/* snake functions */
+// move snake location array in the direction set by button
 void moveSnake() {
   int rowMove = 0;
   int colMove = 0;
@@ -265,6 +283,7 @@ void moveSnake() {
       break;
   }
 
+  // for when snake head ate food
   int lastPosR = snake[snakeLength-1][0];
   int lastPosC = snake[snakeLength-1][1];
 
@@ -274,7 +293,8 @@ void moveSnake() {
   Serial.print(",");
   Serial.print((snake[0][1] + colMove + 8) % 8);
   Serial.print("], ");
-    
+  
+  //update snake location (move by one index)
   for (int i=snakeLength-1; i>0; i--) {
     snake[i][0] = snake[i-1][0];
     snake[i][1] = snake[i-1][1];
@@ -293,13 +313,37 @@ void moveSnake() {
   if (snake[0][0] == foodLoc[0] && snake[0][1] == foodLoc[1]) {
     generateFood(); //set new food location
     if (snakeLength < maxLength){ // bounding for memory safety
+      // add last index to snake array 
       snake[snakeLength][0] = lastPosR;
       snake[snakeLength][1] = lastPosC;
       snakeLength ++;
+
+      if (snakeLength == 8) {
+        tSpeed = 500;
+      }
+      if (snakeLength == 12) {
+        tSpeed = 800;
+      }
     }
   }
 
   updateBoard();
+
+  if (checkCollision()) {
+     gameOver = true;
+     gg();
+  }
+}
+
+bool checkCollision() {
+  for (int i = 1; i < snakeLength; i++) {
+      if (snake[i][0] == snake[0][0] &&
+          snake[i][1] == snake[0][1] ) {
+        // snake collides!
+        return true;
+      }
+  }
+  return false;
 }
 
 
@@ -310,78 +354,16 @@ void loop() {
   drawBoard(); // draws on 8x8 led board
 }
 
+/* game end screen */
+void gg() {
+  board[0] = 0b11110010;
+  board[1] = 0b10000111;
+  board[2] = 0b10110000;
+  board[3] = 0b10011111;
+  board[4] = 0b11111000;
+  board[5] = 0b00001011;
+  board[6] = 0b00001001;
+  board[7] = 0b00001111;
 
-
-
-/* Example drawings */
-void O() {
-  // O
-  rowOn(pin5, 0x7E);
-  rowOn(pin4, 0xE7);
-  rowOn(pin3, 0xC3);
-  rowOn(pin2, 0xC3);
-  rowOn(pin12, 0xC3);
-  rowOn(pin11, 0xC3);
-  rowOn(pin10, 0xE7);
-  rowOn(pinA1, 0x7E);
-}
-void K() {
-  // K
-  rowOn(pin5, 0x63);
-  rowOn(pin4, 0x66);
-  rowOn(pin3, 0x6C);
-  rowOn(pin2, 0x78);
-  rowOn(pin12, 0x6C);
-  rowOn(pin11, 0x66);
-  rowOn(pin10, 0x63);
-  rowOn(pinA1, 0x61);
-}
-void smiley() {
-  // :)
-  rowOn(pin4, 0b00100100);
-  rowOn(pin3, 0b00100100);
-  rowOn(pin2, 0b00100100);
-  rowOn(pin12,0b01000010);
-  rowOn(pin11,0b00111100);
-}
-
-void right() {
-  rowOn(pin5,  0b00001000);
-  rowOn(pin4,  0b00001100);
-  rowOn(pin3,  0b00001110);
-  rowOn(pin2,  0b11111111);
-  rowOn(pin12, 0b11111111);
-  rowOn(pin11, 0b00001110);
-  rowOn(pin10, 0b00001100);
-  rowOn(pinA1, 0b00001000);
-}
-void left() {
-  rowOn(pin5,  0b00010000);
-  rowOn(pin4,  0b00110000);
-  rowOn(pin3,  0b01110000);
-  rowOn(pin2,  0b11111111);
-  rowOn(pin12, 0b11111111);
-  rowOn(pin11, 0b01110000);
-  rowOn(pin10, 0b00110000);
-  rowOn(pinA1, 0b00010000);
-}
-void up() {
-  rowOn(pin5,  0b00011000);
-  rowOn(pin4,  0b00111100);
-  rowOn(pin3,  0b01111110);
-  rowOn(pin2,  0b11111111);
-  rowOn(pin12, 0b00011000);
-  rowOn(pin11, 0b00011000);
-  rowOn(pin10, 0b00011000);
-  rowOn(pinA1, 0b00011000);
-}
-void down() {
-  rowOn(pin5,  0b00011000);
-  rowOn(pin4,  0b00011000);
-  rowOn(pin3,  0b00011000);
-  rowOn(pin2,  0b00011000);
-  rowOn(pin12, 0b11111111);
-  rowOn(pin11, 0b01111110);
-  rowOn(pin10, 0b00111100);
-  rowOn(pinA1, 0b00011000);
+  drawBoard();
 }
