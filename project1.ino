@@ -21,6 +21,8 @@ const int buttons = A6;
 
 int buttonValue = 0;
 int state = 4;
+int lastState= 4;
+
 bool changing1 = false;
 bool changing2 = false;
 bool changing3 = false;
@@ -44,6 +46,8 @@ int snakeLength = 1; // snake's length
 int rowPins[8] = {pin5, pin4, pin3, pin2, pin12, pin11, pin10, pinA1};
 
 unsigned long currentTime;
+unsigned long lastTime = 0;
+int tSpeed = 300; //millisecond to move pix by
 
 void setup() {
   Serial.begin(9600);
@@ -90,6 +94,7 @@ void readButton() {
 
   if (buttonValue <=300 && !changing1) {
     state = 0;
+    lastState = state;
     changing1 = true;
     changing2 = false;
     changing3 = false;
@@ -104,6 +109,7 @@ void readButton() {
 
   if (buttonValue > 300 && buttonValue <= 630  && !changing2) {
     state = 1;
+    lastState = state;
     changing1 = false;
     changing2 = true;
     changing3 = false;
@@ -118,6 +124,7 @@ void readButton() {
 
   if (buttonValue < 900 && buttonValue > 630 && !changing3) {
     state = 2;
+    lastState = state;
     changing1 = false;
     changing2 = false;
     changing3 = true;
@@ -132,6 +139,7 @@ void readButton() {
 
   if (buttonValue >= 900 && buttonValue < 1000 && !changing4) {
     state = 3;
+    lastState = state;
     changing1 = false;
     changing2 = false;
     changing3 = false;
@@ -150,7 +158,14 @@ void readButton() {
     changing3 = false;
     changing4 = false;
     
-    if (state != 4) moveSnake(); // updates the board based on state every second
+    if (lastState != 4) {
+      if (currentTime - lastTime >= tSpeed) {
+        state = lastState;
+        moveSnake(); // updates the board based on state every second
+        lastTime = currentTime;
+      }
+    }
+    
     state = 4;
   }
 
