@@ -43,6 +43,8 @@ int snakeLength = 1; // snake's length
 // row pins in order
 int rowPins[8] = {pin5, pin4, pin3, pin2, pin12, pin11, pin10, pinA1};
 
+unsigned long currentTime;
+
 void setup() {
   Serial.begin(9600);
   // put your setup code here, to run once: 
@@ -148,10 +150,10 @@ void readButton() {
     changing3 = false;
     changing4 = false;
     
+    if (state != 4) moveSnake(); // updates the board based on state every second
     state = 4;
   }
 
-  moveSnake();
 
 
 }
@@ -235,8 +237,9 @@ void moveSnake() {
 
   Serial.print("snake = [");
   for (int i=0; i<snakeLength; i++) {
-    snake[i][0] = snake[i][0] + rowMove;
-    snake[i][1] = snake[i][1] + colMove;
+    
+    snake[i][0] = (snake[i][0] + rowMove) % 8;
+    snake[i][1] = (snake[i][1] + colMove) % 8;
 
     Serial.print("[");
     Serial.print(snake[i][0]);
@@ -250,13 +253,11 @@ void moveSnake() {
 }
 
 void loop() {
-  unsigned long currentTime = millis();
+  currentTime = millis();
   
   // left : 0 , up : 1, right : 2, down: 3
   readButton();
   drawBoard(); // draws on 8x8 led board
-
-  if(currentTime % 100 == 0) moveSnake(); // updates the board based on state every second
   
 
   
@@ -279,8 +280,6 @@ void loop() {
     //down();
     readButton();
   }
-
-  
 }
 
 
